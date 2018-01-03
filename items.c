@@ -241,7 +241,7 @@ static int _ItemsDestroyItem(Items_t *items, const Item_t *itemFromStorage)
 
     remaining = items->count - index - 1;
     if (remaining)
-        memmove(items->storage, items->storage + 1, sizeof(*(items->storage)) * remaining);
+        memmove(items->storage + index, items->storage + index + 1, sizeof(*(items->storage)) * remaining);
     items->count -= 1;
 
     return 0;
