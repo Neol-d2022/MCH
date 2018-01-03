@@ -78,12 +78,13 @@ int CraftLoadRecipeList(RecipeList_t *recipesList, const ItemNameList_t *itemnam
     return _CraftLoadRecipeList_ToArray(head, recipesList, itemscount);
 }
 
-int Craft(const Item_t *targetItem, Items_t *itemRequired, Items_t *itemRemaining, const RecipeList_t *recipesList, const ItemNameList_t *itemnamelist)
+int Craft(const Item_t *targetItem, Items_t *itemRequired, Items_t *itemRemaining, const RecipeList_t *recipesList, const ItemNameList_t *itemnamelist, CraftStep_t ***cs)
 {
     Recipe_t key;
     Item_t item, diff;
     Recipe_t *result;
     const char *targetitemname = ItemName(targetItem->itemId, itemnamelist), *ingredientname;
+    CraftStep_t *ncs;
     unsigned int numberOfIngredients, i, multipler;
     int returned;
 
@@ -119,7 +120,7 @@ int Craft(const Item_t *targetItem, Items_t *itemRequired, Items_t *itemRemainin
                     diff.quantity = item.quantity;
 
                 fprintf(stderr, "[Craft] Ingredien '%s' x%u are not available for item '%s' x%u.\n", ingredientname, diff.quantity, targetitemname, targetItem->quantity);
-                returned = Craft(&diff, itemRequired, itemRemaining, recipesList, itemnamelist);
+                returned = Craft(&diff, itemRequired, itemRemaining, recipesList, itemnamelist, cs);
                 if (returned != 0)
                     return returned;
             }
@@ -133,8 +134,44 @@ int Craft(const Item_t *targetItem, Items_t *itemRequired, Items_t *itemRemainin
         item.quantity *= multipler;
         ItemsAdd(itemRemaining, &item);
         fprintf(stderr, "[Craft] '%s' x%u has just been crafted.\n", targetitemname, item.quantity);
+        if (cs)
+        {
+            ncs = (CraftStep_t *)malloc(sizeof(*ncs));
+            if (ncs == NULL)
+            {
+#ifdef _CRAFT_ABORT_ON_NO_MEMORY
+                abort();
+#else
+                return 1;
+#endif
+            }
+            ncs->multipler = multipler;
+            ncs->r = result;
+            ncs->next = **cs;
+            **cs = ncs;
+            *cs = &(ncs->next);
+        }
         return 0;
     }
+}
+
+int RecipePrint(const Recipe_t *r, const ItemNameList_t *itemnamelist, unsigned int multipler)
+{
+    unsigned int i, n;
+    int result = 0;
+
+    n = 9;
+    result += fprintf(stdout, "\nOUTPUT: '%s(x%u)'(x%u)\n", ItemName(r->output.itemId, itemnamelist), r->output.quantity, multipler);
+    result += fprintf(stdout, "CRAFT MODE: %u\n", r->craftMode);
+    for (i = 0; i < n; i += 1)
+    {
+        if ((r->inputSlots)[i] != 0)
+        {
+            result += fprintf(stdout, "INPUT: %2u is '%s'(x%u)\n", i, ItemName((r->inputSlots)[i], itemnamelist), (r->inputSlots)[i + n]);
+        }
+    }
+
+    return result;
 }
 
 // ================================
@@ -262,6 +299,7 @@ static int _CraftLoadRecipeList_AddItem(_CraftLoadRecipeList_t ***current, const
         return 1;
     }
     memcpy(n->item.inputSlots, &slots, sizeof(*(n->item.inputSlots)) * 18);
+    n->item.craftMode = 0;
     n->next = **current;
     **current = n;
     *current = &(n->next);

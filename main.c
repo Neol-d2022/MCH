@@ -1,6 +1,7 @@
 #include "craft.h"
 
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 
 static void _TrimString(char *str);
@@ -12,6 +13,7 @@ int main(void)
     RecipeList_t recipelist;
     Item_t item;
     Items_t *required, *remaining, *items2make;
+    CraftStep_t *head = NULL, **current, *next, *cur;
     unsigned int numberOfItems, i;
 
     if (ItemLoad(&itemnamelist, "itemnames/"))
@@ -24,16 +26,27 @@ int main(void)
     while (fgets(buf, sizeof(buf), stdin) != NULL)
     {
         _TrimString(buf);
+        if (strlen(buf) == 0)
+            break;
         if (ItemFromString(buf, &item, &itemnamelist) == 0)
             ItemsAdd(items2make, &item);
     }
 
     required = ItemsCreate();
     remaining = ItemsCreate();
+    while (fgets(buf, sizeof(buf), stdin) != NULL)
+    {
+        _TrimString(buf);
+        if (strlen(buf) == 0)
+            break;
+        if (ItemFromString(buf, &item, &itemnamelist) == 0)
+            ItemsAdd(remaining, &item);
+    }
 
+    current = &head;
     numberOfItems = items2make->count;
     for (i = 0; i < numberOfItems; i += 1)
-        Craft(ItemsFromIndex(items2make, i), required, remaining, &recipelist, &itemnamelist);
+        Craft(ItemsFromIndex(items2make, i), required, remaining, &recipelist, &itemnamelist, &current);
     ItemsDestory(items2make);
 
     numberOfItems = required->count;
@@ -53,6 +66,15 @@ int main(void)
         fprintf(stdout, "\t%s x%u\n", ItemName(item.itemId, &itemnamelist), item.quantity);
     }
     ItemsDestory(remaining);
+
+    cur = head;
+    while (cur != NULL)
+    {
+        next = cur->next;
+        RecipePrint(cur->r, &itemnamelist, cur->multipler);
+        free(cur);
+        cur = next;
+    }
 
     return 0;
 }
