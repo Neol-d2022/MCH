@@ -20,6 +20,7 @@ static int _CraftLoadRecipeList_AddItem(_CraftLoadRecipeList_t ***current, const
 static int _CraftLoadRecipeList_ToArray(_CraftLoadRecipeList_t *head, RecipeList_t *recipesList, size_t itemscount);
 static int _CraftLoadRecipeList_ToArray_Sorting_by_outputItemID(const void *a, const void *b);
 static void _CraftLoadRecipeList_AddItem_TrimString(char *str);
+static int _CraftSortRecipe_Sorting_by_recipeOutputItemRank(const void *a, const void *b);
 
 int CraftLoadRecipeList(RecipeList_t *recipesList, const ItemNameList_t *itemnamelist, const char *recipeFolder)
 {
@@ -172,6 +173,97 @@ int RecipePrint(const Recipe_t *r, const ItemNameList_t *itemnamelist, unsigned 
     }
 
     return result;
+}
+
+unsigned int ItemRank(unsigned int itemId, ItemNameList_t *namelist, const RecipeList_t *recipesList)
+{
+    Recipe_t key;
+    ItemName_t *obj;
+    Recipe_t *result;
+    unsigned int maxRank, i, n, rank;
+
+    obj = ItemNameObj(itemId, namelist);
+    if (obj == NULL)
+        return (unsigned int)-1;
+
+    if (obj->rank != 0)
+        return obj->rank; // Cached
+    else
+    {
+        key.output.itemId = itemId;
+        key.output.quantity = 0;
+        result = (Recipe_t *)bsearch(&key, recipesList->storage, recipesList->count, sizeof(*(recipesList->storage)), _CraftLoadRecipeList_ToArray_Sorting_by_outputItemID);
+        if (result == NULL)
+            return (obj->rank = 1); // Base
+        else
+        {
+            maxRank = 0;
+            n = result->input->count;
+            for (i = 0; i < n; i += 1)
+            {
+                rank = ItemRank((result->input->storage)[i].itemId, namelist, recipesList);
+                if (rank > maxRank)
+                    maxRank = rank;
+            }
+            return (obj->rank = maxRank + 1);
+        }
+    }
+}
+
+void CraftSortRecipe(CraftStep_t *head, CraftStep_t **array, unsigned int *length, ItemNameList_t *namelist, RecipeList_t *recipesList)
+{
+    void *args[] = {namelist, recipesList};
+    const struct Recipe_struct_t *r;
+    CraftStep_t *cur, *next, *a;
+    size_t n, m, i;
+
+    n = 0;
+    cur = head;
+    while (cur)
+    {
+        next = cur->next;
+        n += 1;
+        cur = next;
+    }
+
+    a = (CraftStep_t *)malloc(sizeof(*a) * n);
+    if (a == NULL)
+#ifdef _CRAFT_ABORT_ON_NO_MEMORY
+        abort();
+#else
+        return;
+#endif
+
+    i = 0;
+    cur = head;
+    while (cur)
+    {
+        next = cur->next;
+        memcpy(a + i, cur, sizeof(*a));
+        a[i].next = (CraftStep_t *)args;
+        i += 1;
+        free(cur);
+        cur = next;
+    }
+
+    qsort(a, n, sizeof(*a), _CraftSortRecipe_Sorting_by_recipeOutputItemRank);
+    m = n;
+    r = NULL;
+    for (i = 0; i < n; i += 1)
+    {
+        if ((size_t)r == (size_t)a[i].r)
+        {
+            m -= 1;
+            a[i - 1].multipler += a[i].multipler;
+            a[i].r = NULL;
+        }
+        else
+            r = a[i].r;
+    }
+
+    qsort(a, n, sizeof(*a), _CraftSortRecipe_Sorting_by_recipeOutputItemRank);
+    *array = a;
+    *length = m;
 }
 
 // ================================
@@ -366,4 +458,35 @@ static void _CraftLoadRecipeList_AddItem_TrimString(char *str)
     p = strchr(str, '\r');
     if (p)
         *p = '\0';
+}
+
+static int _CraftSortRecipe_Sorting_by_recipeOutputItemRank(const void *a, const void *b)
+{
+    void **args;
+    CraftStep_t *c = (CraftStep_t *)a;
+    CraftStep_t *d = (CraftStep_t *)b;
+    ItemNameList_t *namelist;
+    RecipeList_t *recipesList;
+    unsigned int e, f;
+
+    if (c->r == NULL && d->r == NULL)
+        return 0;
+    else if (c->r == NULL)
+        return 1;
+    else if (d->r == NULL)
+        return -1;
+    else
+    {
+        args = (void **)c->next;
+        namelist = (ItemNameList_t *)args[0];
+        recipesList = (RecipeList_t *)args[1];
+        e = ItemRank(c->r->output.itemId, namelist, recipesList);
+        f = ItemRank(d->r->output.itemId, namelist, recipesList);
+        if (e > f)
+            return 1;
+        else if (e < f)
+            return -1;
+        else
+            return 0;
+    }
 }

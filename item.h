@@ -10,6 +10,7 @@ typedef struct
 typedef struct
 {
     unsigned int itemId;
+    unsigned int rank;
     char *name;
 } ItemName_t;
 
@@ -24,5 +25,6 @@ int ItemLoad(ItemNameList_t *namelist, const char *itemFolder);
 unsigned int ItemGetID(const char *itemname, const ItemNameList_t *namelist);
 int ItemFromString(const char *str, Item_t *item, const ItemNameList_t *namelist);
 const char *ItemName(unsigned int itemId, const ItemNameList_t *namelist);
+ItemName_t *ItemNameObj(unsigned int itemId, ItemNameList_t *namelist);
 
 #endif

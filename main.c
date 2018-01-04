@@ -13,8 +13,8 @@ int main(void)
     RecipeList_t recipelist;
     Item_t item;
     Items_t *required, *remaining, *items2make;
-    CraftStep_t *head = NULL, **current, *next, *cur;
-    unsigned int numberOfItems, i;
+    CraftStep_t *head = NULL, **current, *array;
+    unsigned int numberOfItems, i, numberOfRecipes;
 
     if (ItemLoad(&itemnamelist, "itemnames/"))
         return 1;
@@ -67,14 +67,10 @@ int main(void)
     }
     ItemsDestory(remaining);
 
-    cur = head;
-    while (cur != NULL)
-    {
-        next = cur->next;
-        RecipePrint(cur->r, &itemnamelist, cur->multipler);
-        free(cur);
-        cur = next;
-    }
+    CraftSortRecipe(head, &array, &numberOfRecipes, &itemnamelist, &recipelist);
+    for (i = 0; i < numberOfRecipes; i += 1)
+        RecipePrint(array[i].r, &itemnamelist, array[i].multipler);
+    free(array);
 
     return 0;
 }

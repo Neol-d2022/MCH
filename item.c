@@ -130,6 +130,16 @@ const char *ItemName(unsigned int itemId, const ItemNameList_t *namelist)
         return (*result)->name;
 }
 
+ItemName_t *ItemNameObj(unsigned int itemId, ItemNameList_t *namelist)
+{
+    ItemName_t _key, *key, **result;
+
+    _key.itemId = itemId;
+    key = &_key;
+    result = (ItemName_t **)bsearch(&key, namelist->index, namelist->count, sizeof(*(namelist->index)), _ItemLoad_Sorting_by_itemId);
+    return *result;
+}
+
 // ================================
 // =                              =
 // ================================
@@ -185,6 +195,7 @@ static int _ItemLoad_AddItem(_ItemLoad_t ***current, const char *filename, unsig
         return 1;
     }
     n->item.itemId = ++(*autoincrease);
+    n->item.rank = 0;
     n->next = **current;
     (**current) = n;
     *current = &(n->next);
