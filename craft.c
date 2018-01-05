@@ -487,6 +487,15 @@ static int _CraftSortRecipe_Sorting_by_recipeOutputItemRank(const void *a, const
         else if (e < f)
             return -1;
         else
-            return 0;
+        {
+            e = c->r->output.itemId;
+            f = d->r->output.itemId;
+            if (e > f)
+                return 1;
+            else if (e < f)
+                return -1;
+            else
+                return 0;
+        }
     }
 }
