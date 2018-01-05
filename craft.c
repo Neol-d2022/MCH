@@ -254,8 +254,8 @@ void CraftSortRecipe(CraftStep_t *head, CraftStep_t **array, unsigned int *lengt
         if ((size_t)r == (size_t)a[i].r)
         {
             m -= 1;
-            a[i - 1].multipler += a[i].multipler;
-            a[i].r = NULL;
+            a[i].multipler += a[i - 1].multipler;
+            a[i - 1].r = NULL;
         }
         else
             r = a[i].r;
