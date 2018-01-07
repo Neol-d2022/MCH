@@ -12,7 +12,7 @@ int main(void)
     ItemNameList_t itemnamelist;
     RecipeList_t recipelist;
     Item_t item;
-    Items_t *required, *remaining, *items2make;
+    Items_t *required, *remaining, *items2make, *existing;
     CraftStep_t *head = NULL, **current, *array;
     unsigned int numberOfItems, i, numberOfRecipes;
 
@@ -42,11 +42,32 @@ int main(void)
         if (ItemFromString(buf, &item, &itemnamelist) == 0)
             ItemsAdd(remaining, &item);
     }
+    existing = ItemsDuplicate(remaining);
 
     current = &head;
     numberOfItems = items2make->count;
     for (i = 0; i < numberOfItems; i += 1)
+    {
         Craft(ItemsFromIndex(items2make, i), required, remaining, &recipelist, &itemnamelist, &current);
+        ItemsRemove(remaining, ItemsFromIndex(items2make, i));
+    }
+
+    numberOfItems = existing->count;
+    fprintf(stdout, "[Existing] Item Type: %u\n", numberOfItems);
+    for (i = 0; i < numberOfItems; i += 1)
+    {
+        item = *ItemsFromIndex(existing, i);
+        fprintf(stdout, "\t%s x%u\n", ItemName(item.itemId, &itemnamelist), item.quantity);
+    }
+    ItemsDestory(existing);
+
+    numberOfItems = items2make->count;
+    fprintf(stdout, "[Crafted] Item Type: %u\n", numberOfItems);
+    for (i = 0; i < numberOfItems; i += 1)
+    {
+        item = *ItemsFromIndex(items2make, i);
+        fprintf(stdout, "\t%s x%u\n", ItemName(item.itemId, &itemnamelist), item.quantity);
+    }
     ItemsDestory(items2make);
 
     numberOfItems = required->count;
