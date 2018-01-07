@@ -103,14 +103,14 @@ int Craft(const Item_t *targetItem, Items_t *itemRequired, Items_t *itemRemainin
     {
         numberOfIngredients = result->input->count;
         multipler = (targetItem->quantity + (result->output.quantity - 1)) / result->output.quantity;
-        fprintf(stderr, "[Craft] '%s' x%u requires recipe '%s' to be done %u times.\n", targetitemname, targetItem->quantity, targetitemname, multipler);
+        fprintf(stderr, "[Craft] '%s' x%u requires recipe '%s(x%u)' to be done %u times.\n", targetitemname, targetItem->quantity, targetitemname, result->output.quantity, multipler);
 
         for (i = 0; i < numberOfIngredients; i += 1)
         {
             item = *ItemsFromIndex(result->input, i);
             item.quantity *= multipler;
             ingredientname = ItemName(item.itemId, itemnamelist);
-            fprintf(stderr, "[Craft] Ingredien '%s' x%u are required for item '%s' x%u.\n", ingredientname, item.quantity, targetitemname, targetItem->quantity);
+            fprintf(stderr, "[Craft] Ingredient '%s' x%u are required for item '%s' x%u.\n", ingredientname, item.quantity, targetitemname, targetItem->quantity);
             if (ItemsCheck(itemRemaining, &item) != 0)
             {
                 diff.itemId = item.itemId;
@@ -120,13 +120,13 @@ int Craft(const Item_t *targetItem, Items_t *itemRequired, Items_t *itemRemainin
                 else
                     diff.quantity = item.quantity;
 
-                fprintf(stderr, "[Craft] Ingredien '%s' x%u are not available for item '%s' x%u.\n", ingredientname, diff.quantity, targetitemname, targetItem->quantity);
+                fprintf(stderr, "[Craft] Ingredient '%s' x%u are not available for item '%s' x%u.\n", ingredientname, diff.quantity, targetitemname, targetItem->quantity);
                 returned = Craft(&diff, itemRequired, itemRemaining, recipesList, itemnamelist, cs);
                 if (returned != 0)
                     return returned;
             }
 
-            fprintf(stderr, "[Craft] Ingredien '%s' x%u has just been prepared for item '%s' x%u.\n", ingredientname, item.quantity, targetitemname, targetItem->quantity);
+            fprintf(stderr, "[Craft] Ingredient '%s' x%u has just been prepared for item '%s' x%u.\n", ingredientname, item.quantity, targetitemname, targetItem->quantity);
             if (ItemsRemove(itemRemaining, &item) != 0)
                 abort();
         }
@@ -397,7 +397,7 @@ static int _CraftLoadRecipeList_AddItem(_CraftLoadRecipeList_t ***current, const
     *current = &(n->next);
 
     numberOfIngredients = n->item.input->count;
-    fprintf(stderr, "[_CraftLoadRecipeList_AddItem] Recipe '%s' has just loaded.\n", ItemName(n->item.output.itemId, itemnamelist));
+    fprintf(stderr, "[_CraftLoadRecipeList_AddItem] Recipe '%s' has just been loaded.\n", ItemName(n->item.output.itemId, itemnamelist));
     for (i = 0; i < numberOfIngredients; i += 1)
         fprintf(stderr, "\t'%s' (%u) x%u.\n", ItemName(ItemsFromIndex(n->item.input, i)->itemId, itemnamelist), ItemsFromIndex(n->item.input, i)->itemId, ItemsFromIndex(n->item.input, i)->quantity);
 

@@ -200,7 +200,7 @@ static int _ItemLoad_AddItem(_ItemLoad_t ***current, const char *filename, unsig
     (**current) = n;
     *current = &(n->next);
 
-    fprintf(stderr, "[_ItemLoad_AddItem] '%s' (%u) has just added to ItemList.\n", n->item.name, n->item.itemId);
+    fprintf(stderr, "[_ItemLoad_AddItem] '%s' (%u) has just been added to ItemList.\n", n->item.name, n->item.itemId);
     return 0;
 }
 
