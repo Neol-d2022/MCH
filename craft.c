@@ -28,6 +28,7 @@ int CraftLoadRecipeList(RecipeList_t *recipesList, const ItemNameList_t *itemnam
     DIR *dir;
     struct dirent *dp;
     char *fullpath;
+    char *filetype;
     size_t length, strlength, itemscount;
     _CraftLoadRecipeList_t *head = NULL;
     _CraftLoadRecipeList_t **current = &head;
@@ -58,18 +59,25 @@ int CraftLoadRecipeList(RecipeList_t *recipesList, const ItemNameList_t *itemnam
         }
         memcpy(fullpath, recipeFolder, strlength + 1);
         strcat(fullpath, dp->d_name);
-        if (stat(fullpath, &s) == 0)
+        filetype = strstr(dp->d_name, ".txt");
+        if (filetype != NULL)
         {
-            if (S_ISREG(s.st_mode))
+            if (strlen(filetype) == strlen(".txt"))
             {
-                if (_CraftLoadRecipeList_AddItem(&current, itemnamelist, fullpath) != 0)
+                if (stat(fullpath, &s) == 0)
                 {
-                    _CraftLoadRecipeList_CleanUp(head);
-                    free(fullpath);
-                    closedir(dir);
-                    return 1;
+                    if (S_ISREG(s.st_mode))
+                    {
+                        if (_CraftLoadRecipeList_AddItem(&current, itemnamelist, fullpath) != 0)
+                        {
+                            _CraftLoadRecipeList_CleanUp(head);
+                            free(fullpath);
+                            closedir(dir);
+                            return 1;
+                        }
+                        itemscount += 1;
+                    }
                 }
-                itemscount += 1;
             }
         }
         free(fullpath);

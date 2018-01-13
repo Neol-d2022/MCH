@@ -28,6 +28,7 @@ int ItemLoad(ItemNameList_t *namelist, const char *itemFolder)
     DIR *dir;
     struct dirent *dp;
     char *fullpath;
+    char *filetype;
     size_t length, strlength, itemscount;
     _ItemLoad_t *head = NULL;
     _ItemLoad_t **current = &head;
@@ -59,20 +60,28 @@ int ItemLoad(ItemNameList_t *namelist, const char *itemFolder)
         }
         memcpy(fullpath, itemFolder, strlength + 1);
         strcat(fullpath, dp->d_name);
-        if (stat(fullpath, &s) == 0)
+        filetype = strstr(dp->d_name, ".txt");
+        if (filetype != NULL)
         {
-            if (S_ISREG(s.st_mode))
+            if (strlen(filetype) == strlen(".txt"))
             {
-                if (_ItemLoad_AddItem(&current, fullpath, &autoincrease) != 0)
+                if (stat(fullpath, &s) == 0)
                 {
-                    _ItemLoad_CleanUp(head);
-                    free(fullpath);
-                    closedir(dir);
-                    return 1;
+                    if (S_ISREG(s.st_mode))
+                    {
+                        if (_ItemLoad_AddItem(&current, fullpath, &autoincrease) != 0)
+                        {
+                            _ItemLoad_CleanUp(head);
+                            free(fullpath);
+                            closedir(dir);
+                            return 1;
+                        }
+                        itemscount += 1;
+                    }
                 }
-                itemscount += 1;
             }
         }
+
         free(fullpath);
     }
 
